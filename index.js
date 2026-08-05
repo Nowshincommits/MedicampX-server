@@ -7,7 +7,6 @@ const { MongoClient, ServerApiVersion } = require("mongodb");
 dotenv.config();
 // middleware
 app.use(cors());
-app.use(express.json());
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.ncobj2l.mongodb.net/?appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -30,13 +29,25 @@ async function run() {
     app.post("/users", async (req, res) => {
       const email = req.body.email;
       const existingUser = await userCollection.findOne({ email });
-      if (existingUser)
+      if (existingUser){
         return res
           .status(200)
           .send({ message: "User exists", inserted: false });
+      }
       const result = await userCollection.insertOne(req.body);
       res.send(result);
     });
+
+    app.patch("/users/:id/role", async (req, res) => {
+      const id = req.params.id;
+      const { role } = req.body;
+       const result = await usersCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: { role } },
+        );
+        res.send(result);
+      },
+    );
     // camp details api
     app.post("/camp-details", async (req, res) => {
       const campDetails = req.body;
