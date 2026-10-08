@@ -159,6 +159,50 @@ async function run() {
         });
       }
     });
+    app.patch("/users/:email", async (req, res) => {
+      const { email } = req.params;
+      const { name, photoURL, phone } = req.body;
+
+      try {
+        const result = await userCollection.updateOne(
+          { email: email },
+          {
+            $set: {
+              name,
+              photoURL,
+              phone,
+            },
+          },
+        );
+        res.send(result);
+      } catch (error) {
+        console.error("Update user error:", error);
+        res.status(500).send({
+          message: "Failed to update user",
+        });
+      }
+    });
+
+    app.get("/users/:email", async (req, res) => {
+      const { email } = req.params;
+
+      try {
+        const user = await userCollection.findOne({ email });
+
+        if (!user) {
+          return res.status(404).send({
+            message: "User not found",
+          });
+        }
+
+        res.send(user);
+      } catch (error) {
+        console.error("Get user error:", error);
+        res.status(500).send({
+          message: "Failed to get user",
+        });
+      }
+    });
 
     // Add camp
     app.post("/camp-details", async (req, res) => {
@@ -229,6 +273,7 @@ async function run() {
         });
       }
     });
+
     app.post("/create-payment-intent", async (req, res) => {
       const amountInCents = req.body.amountInCents;
 
@@ -257,20 +302,22 @@ async function run() {
         const payment = req.body;
 
         payment.paid_At = new Date();
+        payment.paymentStatus = "paid";
 
         const paymentResult = await paymentCollection.insertOne(payment);
-        
+
         await participantCollection.updateOne(
           {
             campId: payment.campId,
+            campName: payment.campName,
             participantEmail: payment.userEmail,
           },
           {
             $set: {
               paymentStatus: "paid",
-              paid_At: new Date()
+              paid_At: new Date(),
             },
-          }
+          },
         );
 
         res.send({
