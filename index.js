@@ -222,7 +222,56 @@ async function run() {
         });
       }
     });
+    app.get("/camp-details/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
 
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).send({
+            message: "Invalid camp ID",
+          });
+        }
+
+        const camp = await campdetailCollection.findOne({
+          _id: new ObjectId(id),
+        });
+
+        if (!camp) {
+          return res.status(404).send({
+            message: "Camp not found",
+          });
+        }
+
+        res.send(camp);
+      } catch (error) {
+        console.error("Get camp error:", error);
+        res.status(500).send({
+          message: "Failed to get camp",
+        });
+      }
+    });
+    app.delete("/camp-details/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        if (!ObjectId.isValid(id)) {
+          return res.status(400).send({
+            message: "Invalid camp ID",
+          });
+        }
+        const result = await campdetailCollection.deleteOne({
+          _id: new ObjectId(id),
+        });
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ error: "Camp not found" });
+        }
+        res.json({ success: true, deletedCount: result.deletedCount });
+      } catch (error) {
+        console.error("Delete camp error:", error);
+        res.status(500).send({
+          message: "Failed to delete camp",
+        });
+      }
+    });
     // Update participant count
     app.patch("/camp-details/:id/participantCount", async (req, res) => {
       try {
@@ -383,7 +432,7 @@ async function run() {
         });
       }
     });
-
+    
     app.get("/registered-camps/:email", async (req, res) => {
       try {
         const { email } = req.params;
